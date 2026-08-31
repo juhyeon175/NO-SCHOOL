@@ -1,0 +1,144 @@
+import streamlit as st
+import random
+
+# 페이지 기본 설정
+st.set_page_config(page_title="타노스의 스톤 수집기", page_icon="💎", layout="centered")
+
+# 1. 게임 상태 초기화 (Session State)
+if "hp" not in st.session_state:
+    st.session_state.hp = 100
+if "stones" not in st.session_state:
+    st.session_state.stones = {
+        "파워 스톤": False,
+        "스페이스 스톤": False,
+        "리얼리티 스톤": False,
+        "소울 스톤": False,
+        "타임 스톤": False,
+        "마인드 스톤": False,
+    }
+if "game_over" not in st.session_state:
+    st.session_state.game_over = False
+if "snapped" not in st.session_state:
+    st.session_state.snapped = False
+if "log" not in st.session_state:
+    st.session_state.log = ["우주의 균형을 맞추기 위한 여정이 시작되었습니다."]
+
+# 리셋 함수
+def reset_game():
+    st.session_state.hp = 100
+    st.session_state.stones = {k: False for k in st.session_state.stones}
+    st.session_state.game_over = False
+    st.session_state.snapped = False
+    st.session_state.log = ["게임을 다시 시작합니다."]
+
+# 타이틀 및 대시보드
+st.title("💎 타노스: 인피니티 스톤의 여정")
+st.caption("Streamlit 기반 미니 탐험 게임")
+
+# 상태 표시 영역 (대시보드)
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(label="타노스의 체력 (HP)", value=f"{st.session_state.hp} / 100")
+with col2:
+    collected_count = sum(st.session_state.stones.values())
+    st.metric(label="수집한 스톤", value=f"{collected_count} / 6")
+
+# 현재 보유한 스톤 visual 표시
+stone_status = []
+for stone, acquired in st.session_state.stones.items():
+    if acquired:
+        stone_status.append(f"✅ **{stone}**")
+    else:
+        stone_status.append(f"❌ ~~{stone}~~")
+st.write("입수한 스톤 목록: " + " | ".join(stone_status))
+
+st.markdown("---")
+
+# 게임 오버 처리
+if st.session_state.hp <= 0:
+    st.error("💀 히어로들의 거센 저항에 패배했습니다... 체력이 0이 되었습니다.")
+    if st.button("게임 다시 시작"):
+        reset_game()
+        st.rerun()
+    st.stop()
+
+# 승리(핑거스냅) 처리
+if st.session_state.snapped:
+    st.balloons()
+    st.success("🤌 **핑거스냅 성공!** 우주의 절반이 먼지가 되어 사라졌습니다.")
+    st.info("임무를 완수했습니다. 당신은 조용히 농장을 바라봅니다...")
+    if st.button("새로운 우주에서 다시 시작"):
+        reset_game()
+        st.rerun()
+    st.stop()
+
+# 스톤 모두 수집 시 핑거스냅 이벤트
+if collected_count == 6:
+    st.warning("🔥 모든 인피니티 스톤이 인피니티 건틀렛에 장착되었습니다!")
+    if st.button("✨ 핑거 스냅 실행하기!", use_container_width=True):
+        st.session_state.snapped = True
+        st.rerun()
+
+# 2. 탐험 시스템 구현
+st.subheader("🪐 행성 탐험하기")
+st.write("스톤을 찾기 위해 어디로 이동하시겠습니까?")
+
+loc_col1, loc_col2, loc_col3 = st.columns(3)
+
+# 1) 노웨어 탐험 (파워 / 스페이스)
+with loc_col1:
+    if st.button("🌌 노웨어 (Knowhere)"):
+        damage = random.randint(5, 20)
+        st.session_state.hp -= damage
+        
+        # 아직 얻지 못한 스톤 후보
+        available = [s for s in ["파워 스톤", "스페이스 스톤"] if not st.session_state.stones[s]]
+        if available and random.random() > 0.3:
+            found = random.choice(available)
+            st.session_state.stones[found] = True
+            st.session_state.log.append(f" 노웨어에서 가디언즈 오브 갤러시를 물리치고 [{found}]을 획득했습니다! (체력 -{damage})")
+        else:
+            st.session_state.log.append(f" 노웨어를 수색했지만 빈손이었습니다. 히어로들의 공격을 받았습니다. (체력 -{damage})")
+        st.rerun()
+
+# 2) 보르미르 탐험 (소울 / 리얼리티)
+with loc_col2:
+    if st.button("🌑 보르미르 (Vormir)"):
+        damage = random.randint(10, 25)
+        st.session_state.hp -= damage
+        
+        available = [s for s in ["소울 스톤", "리얼리티 스톤"] if not st.session_state.stones[s]]
+        if available and random.random() > 0.3:
+            found = random.choice(available)
+            st.session_state.stones[found] = True
+            st.session_state.log.append(f" 보르미르의 희생을 거쳐 [{found}]을 획득했습니다! (체력 -{damage})")
+        else:
+            st.session_state.log.append(f" 보르미르의 레드 스컬이 아직 시련이 부족하다고 합니다. (체력 -{damage})")
+        st.rerun()
+
+# 3) 지구 탐험 (타임 / 마인드)
+with loc_col3:
+    if st.button("🌍 지구 (Earth)"):
+        damage = random.randint(15, 30)
+        st.session_state.hp -= damage
+        
+        available = [s for s in ["타임 스톤", "마인드 스톤"] if not st.session_state.stones[s]]
+        if available and random.random() > 0.3:
+            found = random.choice(available)
+            st.session_state.stones[found] = True
+            st.session_state.log.append(f" 지구의 어벤져스 방어선을 뚫고 [{found}]을 빼앗았습니다! (체력 -{damage})")
+        else:
+            st.session_state.log.append(f" 어벤져스의 강력한 반격에 부딪혀 후퇴했습니다. (체력 -{damage})")
+        st.rerun()
+
+# 회복 옵션
+st.markdown("---")
+if st.button("💊 부하들의 호위 받기 (체력 20 회복)"):
+    st.session_state.hp = min(100, st.session_state.hp + 20)
+    st.session_state.log.append(" 전열을 정비하며 체력을 회복했습니다. (+20 HP)")
+    st.rerun()
+
+# 진행 로그
+st.subheader("📜 정복 기록")
+for log_entry in reversed(st.session_state.log[-5:]):
+    st.write(f"- {log_entry}")
